@@ -51,11 +51,12 @@ Merge to main
 
 ## GitHub Actions Secrets Required (for `deploy.yml`)
 
-Add these in **GitHub → Settings → Secrets and variables → Actions**:
+Add these in **GitHub → Settings → Secrets and variables → Actions** (as either
+Secrets or Variables — `deploy.yml` accepts both):
 
 | Secret | Description |
 |--------|-------------|
-| `FIREBASE_PROJECT_ID` | Firebase project ID (used as `--project` flag). GitHub Actions secrets are never exposed to a browser, so this one intentionally keeps the bare name instead of the `NEXT_PUBLIC_` prefix used in `.env`/Vercel — value is the same project ID either way. |
+| `FIREBASE_PROJECT_ID` | Firebase project ID (used as `--project` flag). `NEXT_PUBLIC_FIREBASE_PROJECT_ID` is also accepted as a fallback for compatibility with existing setups. |
 | `FIREBASE_SERVICE_ACCOUNT_KEY_BASE64` | Base64-encoded service account JSON |
 
 ### Getting the service account key

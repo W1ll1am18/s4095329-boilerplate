@@ -21,15 +21,31 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Authenticate to Google Cloud
+        env:
+          FIREBASE_SERVICE_ACCOUNT_KEY_BASE64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64 || vars.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64 }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID || vars.FIREBASE_PROJECT_ID || secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID || vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
         run: |
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64 }}" | base64 --decode > /tmp/gcp-sa.json
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_KEY_BASE64" ]; then
+            echo "::error::Missing FIREBASE_SERVICE_ACCOUNT_KEY_BASE64 secret/variable."
+            exit 1
+          fi
+          if [ -z "$FIREBASE_PROJECT_ID" ]; then
+            echo "::error::Missing FIREBASE_PROJECT_ID (or NEXT_PUBLIC_FIREBASE_PROJECT_ID) secret/variable."
+            exit 1
+          fi
+          printf "%s" "$FIREBASE_SERVICE_ACCOUNT_KEY_BASE64" | base64 --decode > /tmp/gcp-sa.json
+          if [ ! -s /tmp/gcp-sa.json ]; then
+            echo "::error::Decoded service account key is empty or invalid base64."
+            exit 1
+          fi
           echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-sa.json" >> $GITHUB_ENV
+          echo "FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID" >> $GITHUB_ENV
 
       - name: Deploy Firestore rules
         run: |
           npx firebase-tools deploy \
             --only firestore:rules \
-            --project ${{ secrets.FIREBASE_PROJECT_ID }} \
+            --project "$FIREBASE_PROJECT_ID" \
             --non-interactive
 
   # Optional — only needed if this project actually uses backend/ (the Express
@@ -61,13 +77,29 @@ jobs:
         run: pnpm --filter backend build
 
       - name: Authenticate to Google Cloud
+        env:
+          FIREBASE_SERVICE_ACCOUNT_KEY_BASE64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64 || vars.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64 }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID || vars.FIREBASE_PROJECT_ID || secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID || vars.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
         run: |
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY_BASE64 }}" | base64 --decode > /tmp/gcp-sa.json
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_KEY_BASE64" ]; then
+            echo "::error::Missing FIREBASE_SERVICE_ACCOUNT_KEY_BASE64 secret/variable."
+            exit 1
+          fi
+          if [ -z "$FIREBASE_PROJECT_ID" ]; then
+            echo "::error::Missing FIREBASE_PROJECT_ID (or NEXT_PUBLIC_FIREBASE_PROJECT_ID) secret/variable."
+            exit 1
+          fi
+          printf "%s" "$FIREBASE_SERVICE_ACCOUNT_KEY_BASE64" | base64 --decode > /tmp/gcp-sa.json
+          if [ ! -s /tmp/gcp-sa.json ]; then
+            echo "::error::Decoded service account key is empty or invalid base64."
+            exit 1
+          fi
           echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-sa.json" >> $GITHUB_ENV
+          echo "FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID" >> $GITHUB_ENV
 
       - name: Deploy Cloud Function
         run: |
           npx firebase-tools deploy \
             --only functions \
-            --project ${{ secrets.FIREBASE_PROJECT_ID }} \
+            --project "$FIREBASE_PROJECT_ID" \
             --non-interactive
